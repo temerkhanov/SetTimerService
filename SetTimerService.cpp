@@ -11,30 +11,17 @@ SERVICE_STATUS_HANDLE gStatusHandle = NULL;
 
 ULONG                 gOriginalTimerResolution;
 
-VOID WINAPI ServiceMain(DWORD argc, LPTSTR* argv);
+VOID WINAPI ServiceMain(DWORD Argc, LPTSTR* Argv);
 VOID WINAPI ServiceCtrlHandler(DWORD);
 
 #define SERVICE_NAME  _T("SetTimerService")
 
-int _tmain(int argc, TCHAR* argv[])
-{
-    SERVICE_TABLE_ENTRY ServiceTable[] =
-    {
-        {SERVICE_NAME, (LPSERVICE_MAIN_FUNCTION)ServiceMain},
-        {NULL, NULL}
-    };
-
-    if (StartServiceCtrlDispatcher(ServiceTable) == FALSE)
-    {
-        return GetLastError();
-    }
-
-    return 0;
-}
-
-VOID WINAPI ServiceMain(DWORD argc, LPTSTR* argv)
+VOID WINAPI ServiceMain(DWORD Argc, LPTSTR* Argv)
 {
     NTSTATUS Status;
+
+    UNREFERENCED_PARAMETER(Argc);
+    UNREFERENCED_PARAMETER(Argv);
 
     gStatusHandle = RegisterServiceCtrlHandler(SERVICE_NAME, ServiceCtrlHandler);
 
@@ -110,4 +97,23 @@ VOID WINAPI ServiceCtrlHandler(DWORD CtrlCode)
         break;
     }
 
+}
+
+int _tmain(int Argc, TCHAR* Argv[])
+{
+    UNREFERENCED_PARAMETER(Argc);
+    UNREFERENCED_PARAMETER(Argv);
+
+    SERVICE_TABLE_ENTRY ServiceTable[] =
+    {
+        {SERVICE_NAME, (LPSERVICE_MAIN_FUNCTION)ServiceMain},
+        {NULL, NULL}
+    };
+
+    if (StartServiceCtrlDispatcher(ServiceTable) == FALSE)
+    {
+        return GetLastError();
+    }
+
+    return 0;
 }
