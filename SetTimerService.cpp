@@ -5,6 +5,7 @@
 #include <tchar.h>
 
 #include "NtTimer.h"
+#include "Registry.h"
 
 SERVICE_STATUS        gServiceStatus = { 0 };
 SERVICE_STATUS_HANDLE gStatusHandle = NULL;
@@ -14,11 +15,37 @@ ULONG                 gOriginalTimerResolution;
 VOID WINAPI ServiceMain(DWORD Argc, LPTSTR* Argv);
 VOID WINAPI ServiceCtrlHandler(DWORD);
 
-#define SERVICE_NAME  _T("SetTimerService")
+#define SERVICE_NAME       _T("SetTimer")
+#define PARAMETER_NAME     _T("TimerResolution")
+#define MAX_TIMER_PERIOD      (100000)
+#define MIN_TIMER_PERIOD      (5000)
+#define DEFAULT_TIMER_PERIOD  (20000) /* 2 ms */
+
+LONG SetupTimerResolution(VOID)
+{
+    LONG  Result;
+    DWORD TimerResolution;
+
+    Result = RegistryGetServiceParameter(SERVICE_NAME, PARAMETER_NAME, &TimerResolution);
+
+    if ((Result != ERROR_SUCCESS) ||
+        (TimerResolution > MAX_TIMER_PERIOD) ||
+        (TimerResolution < MIN_TIMER_PERIOD))
+    {
+        TimerResolution = DEFAULT_TIMER_PERIOD;
+    }
+
+    if (Result == ERROR_FILE_NOT_FOUND) {
+        Result = RegistrySetServiceParameter(SERVICE_NAME, PARAMETER_NAME, TimerResolution);
+    }
+
+    return TimerResolution;
+}
 
 VOID WINAPI ServiceMain(DWORD Argc, LPTSTR* Argv)
 {
     NTSTATUS Status;
+    LONG     TimerResolution;
 
     UNREFERENCED_PARAMETER(Argc);
     UNREFERENCED_PARAMETER(Argv);
@@ -27,7 +54,7 @@ VOID WINAPI ServiceMain(DWORD Argc, LPTSTR* Argv)
 
     if (gStatusHandle == NULL)
     {
-         goto Exit;
+        goto Exit;
     }
 
     // Prepare to start
@@ -45,7 +72,9 @@ VOID WINAPI ServiceMain(DWORD Argc, LPTSTR* Argv)
         goto Exit;
     }
 
-    Status = NtSetTimerResolution(20000, TRUE, &gOriginalTimerResolution);
+    TimerResolution = SetupTimerResolution();
+
+    Status = NtSetTimerResolution(TimerResolution, TRUE, &gOriginalTimerResolution);
 
     if (Status == STATUS_TIMER_RESOLUTION_NOT_SET) {
         gServiceStatus.dwControlsAccepted = 0;
@@ -71,6 +100,9 @@ Exit:
 
 VOID WINAPI ServiceCtrlHandler(DWORD CtrlCode)
 {
+    NTSTATUS Status;
+    ULONG    TimerResolution;
+
     switch (CtrlCode)
     {
     case SERVICE_CONTROL_STOP:
@@ -85,6 +117,8 @@ VOID WINAPI ServiceCtrlHandler(DWORD CtrlCode)
         gServiceStatus.dwCurrentState = SERVICE_STOPPED;
         gServiceStatus.dwWin32ExitCode = 0;
         gServiceStatus.dwCheckPoint = 4;
+
+        Status = NtSetTimerResolution(gOriginalTimerResolution, FALSE, &TimerResolution);
 
         if (SetServiceStatus(gStatusHandle, &gServiceStatus) == FALSE)
         {
