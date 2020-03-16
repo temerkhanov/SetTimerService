@@ -165,10 +165,16 @@
 			<File
 				RelativePath="NtTimer.h">
 			</File>
+			<File
+				RelativePath=".\resource.h">
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
+			<File
+				RelativePath=".\SetTimerService.rc">
+			</File>
 		</Filter>
 	</Files>
 	<Globals>
