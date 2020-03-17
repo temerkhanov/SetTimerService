@@ -6,16 +6,18 @@
 
 #include "NtTimer.h"
 #include "Registry.h"
+#include "ServiceControl.h"
 
 SERVICE_STATUS        gServiceStatus = { 0 };
 SERVICE_STATUS_HANDLE gStatusHandle = NULL;
 
 ULONG                 gOriginalTimerResolution;
 
-VOID WINAPI ServiceMain(DWORD Argc, LPTSTR* Argv);
+VOID WINAPI ServiceMain(DWORD Argc, LPTSTR Argv[]);
 VOID WINAPI ServiceCtrlHandler(DWORD);
 
 #define SERVICE_NAME       _T("SetTimer")
+#define DISPLAY_NAME       _T("Set Kernel Timer")
 #define PARAMETER_NAME     _T("TimerResolution")
 #define MAX_TIMER_PERIOD      (100000)
 #define MIN_TIMER_PERIOD      (5000)
@@ -42,7 +44,7 @@ LONG SetupTimerResolution(VOID)
     return TimerResolution;
 }
 
-VOID WINAPI ServiceMain(DWORD Argc, LPTSTR* Argv)
+VOID WINAPI ServiceMain(DWORD Argc, LPTSTR Argv[])
 {
     NTSTATUS Status;
     LONG     TimerResolution;
@@ -133,7 +135,30 @@ VOID WINAPI ServiceCtrlHandler(DWORD CtrlCode)
 
 }
 
-int _tmain(int Argc, TCHAR* Argv[])
+#define PARAM_USAGE                          \
+    _T("Command line parameters:\r\n")       \
+    _T("/INSTALL     install service\r\n")   \
+    _T("/UNINSTALL   uninstall service\r\n")
+
+#define PARAM_HELP \
+    _T("/? for a list of supported parameters\r\n")
+
+#define PARAM_TOO_MANY \
+    _T("Too many command line parameters\r\n")
+
+#define PARAM_UNKNOWN \
+    _T("Unknown command line parameter\r\n")
+
+#define PARAM_INSTALL \
+    _T("/INSTALL")
+
+#define PARAM_UNINSTALL \
+    _T("/UNINSTALL")
+
+#define PARAM_QUESTION \
+    _T("/?")
+
+int _tmain(int Argc, LPTSTR Argv[])
 {
     UNREFERENCED_PARAMETER(Argc);
     UNREFERENCED_PARAMETER(Argv);
@@ -143,6 +168,32 @@ int _tmain(int Argc, TCHAR* Argv[])
         {SERVICE_NAME, (LPSERVICE_MAIN_FUNCTION)ServiceMain},
         {NULL, NULL}
     };
+
+    if (Argc > 2) {
+        _tcprintf(PARAM_TOO_MANY);
+        _tcprintf(PARAM_HELP);
+        return ERROR_INVALID_PARAMETER;
+    } else if (Argc == 2) {
+        if (_tcsicmp(Argv[1], PARAM_QUESTION) == 0)
+        {
+            _tcprintf(PARAM_USAGE);
+            return ERROR_SUCCESS;
+        }
+        else if (_tcsicmp(Argv[1], PARAM_INSTALL) == 0)
+        {
+            return ServiceInstall(SERVICE_NAME, DISPLAY_NAME, NULL);
+        }
+        else if (_tcsicmp(Argv[1], PARAM_UNINSTALL) == 0)
+        {
+            return ServiceUninstall(SERVICE_NAME);
+        }
+        else
+        {
+            _tcprintf(PARAM_UNKNOWN);
+            _tcprintf(PARAM_HELP);
+            return ERROR_INVALID_PARAMETER;
+        }
+    }
 
     if (StartServiceCtrlDispatcher(ServiceTable) == FALSE)
     {
