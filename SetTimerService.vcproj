@@ -141,6 +141,9 @@
 				RelativePath=".\Registry.cpp">
 			</File>
 			<File
+				RelativePath=".\ServiceControl.cpp">
+			</File>
+			<File
 				RelativePath="SetTimerService.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
@@ -167,6 +170,9 @@
 			</File>
 			<File
 				RelativePath=".\resource.h">
+			</File>
+			<File
+				RelativePath=".\ServiceControl.h">
 			</File>
 		</Filter>
 		<Filter
