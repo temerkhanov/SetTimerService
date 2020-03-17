@@ -1,0 +1,1 @@
+sc config AudioSrv depend= "PlugPlay/RpcSs/SetTimer"
