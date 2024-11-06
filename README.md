@@ -14,3 +14,8 @@ Uninstall:
 "SetTimerService /uninstall" - uninstall SetTimerService
 
 install_xp.cmd - adds SetTimerService as a dependency for Windows sound system, should prevent possible races at startup.
+
+Tuning:
+Registry values are located at HKLM:SYSTEM\CurrentControlSet\Services\SetTimerService\Parameters
+
+TimerResolution: Dword - Desired timer resolution in 100 ns quanta.
